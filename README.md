@@ -49,5 +49,14 @@ Progetto per il controllo diretto e 100% offline degli attuatori **Finder YESLY*
 
 ---
 
+## Integrazione con Home Assistant (homeassistant-finder-you)
+
+Questo progetto lavora in stretta sinergia con [`homeassistant-finder-you`](https://github.com/francescodoffizi/homeassistant-finder-you):
+- Fornisce l'encoder crittografico AES-128 / CCM per i comandi radio e i template ESPHome per il broadcasting BLE diretto.
+- L'integrazione `homeassistant-finder-you` implementa un'architettura **Local-First con fallback su Cloud**: invia i comandi prima in locale tramite il proxy/bridge BLE definito in questo repo, garantendo latenza zero e resilienza offline, e ricorre ai server cloud Finder solo in caso di mancata copertura radio.
+
+---
+
 ## 4. Licenza
 MIT License
+
