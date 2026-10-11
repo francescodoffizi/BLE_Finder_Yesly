@@ -11,8 +11,21 @@ venv/
 *.bin
 *.elf
 
+# Secrets & Sensitive Data
+secrets.yaml
+*.secret
+*.bin
+*.dump
+keys.json
+plant_keys.json
+plant_dump.bin
+core.config_entries
+*credential*
+*token*
+
 # OS & IDE
 .DS_Store
 .vscode/
 .idea/
 *.swp
+
