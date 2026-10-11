@@ -11,9 +11,9 @@ esphome:
     - finder_sender.h
 
 api:
-  services:
+  actions:
     # 1. Mesh Click (Relays On/Off, Shutter full open/close click)
-    - service: finder_mesh_click
+    - action: finder_mesh_click
       variables:
         mac: string
         key: string
@@ -24,7 +24,7 @@ api:
             send_finder_generic_click_hex(mac, key, (int)channel);
 
     # 2. Mesh Set Percent (Dimmers 15.21 and Shutters 13.S2 position 0-100%)
-    - service: finder_mesh_set_percent
+    - action: finder_mesh_set_percent
       variables:
         mac: string
         key: string
@@ -35,7 +35,7 @@ api:
             send_finder_generic_percent_hex(mac, key, (int)percent);
 
     # 3. Mesh Shutter Stop (Send release frame to stop rolling shutter)
-    - service: finder_mesh_shutter_stop
+    - action: finder_mesh_shutter_stop
       variables:
         mac: string
         key: string
