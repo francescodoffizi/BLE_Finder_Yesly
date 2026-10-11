@@ -42,21 +42,40 @@ Progetto per il controllo diretto e 100% offline degli attuatori **Finder YESLY*
 
 ## 3. Struttura del Repository
 
-- `components/`: Componenti personalizzati ESPHome per Finder YESLY.
-- `tools/`: Script Python per estrazione chiavi, analisi catture e PoC di invio pacchetti BLE.
-- `docs/`: Documentazione di reverse engineering del protocollo radio BLE.
-- `finder_yesly_bridge.yaml`: Esempio di configurazione firmware ESPHome.
+- `packages/finder_yesly_mesh.yaml`: Package standard ESPHome pronto all'uso da includere in qualsiasi proxy ESP32.
+- `finder_sender.h`: Motore crittografico AES-128-CCM e gestore advertising radio BLE raw.
+- `bluetooth-proxy-sara.yaml`: Esempio di firmware nodo proxy reale ripulito e modulare.
+- `tools/`: Script Python per reverse engineering, cattura telemetria e PoC.
 
 ---
 
-## Integrazione con Home Assistant (homeassistant-finder-you)
+## 4. Come installare il supporto Finder YESLY su qualsiasi ESP32
 
-Questo progetto lavora in stretta sinergia con [`homeassistant-finder-you`](https://github.com/francescodoffizi/homeassistant-finder-you):
-- Fornisce l'encoder crittografico AES-128 / CCM per i comandi radio e i template ESPHome per il broadcasting BLE diretto.
-- L'integrazione `homeassistant-finder-you` implementa un'architettura **Local-First con fallback su Cloud**: invia i comandi prima in locale tramite il proxy/bridge BLE definito in questo repo, garantendo latenza zero e resilienza offline, e ricorre ai server cloud Finder solo in caso di mancata copertura radio.
+Per abilitare il controllo diretto Finder YESLY su qualsiasi nodo ESP32 (senza modifiche custom locali o pulsanti fittizi):
+
+Nel file di configurazione YAML del tuo ESP32 (tramite ESPHome Dashboard su Home Assistant):
+
+```yaml
+packages:
+  finder_yesly:
+    url: https://github.com/francescodoffizi/BLE_Finder_Yesly
+    ref: main
+    files: [ packages/finder_yesly_mesh.yaml, finder_sender.h ]
+    refresh: 1d
+```
+
+*(Oppure scaricando `finder_sender.h` e includendo `packages/finder_yesly_mesh.yaml` localmente).*
+
+Una volta compilato e caricato, l'ESP esporrà automaticamente via Home Assistant API i 3 servizi universali:
+- `esphome.<nome_nodo>_finder_mesh_click`
+- `esphome.<nome_nodo>_finder_mesh_set_percent`
+- `esphome.<nome_nodo>_finder_mesh_shutter_stop`
+
+L'integrazione Home Assistant [`homeassistant-finder-you`](https://github.com/francescodoffizi/homeassistant-finder-you) rileverà automaticamente tutti gli ESP che espongono questi servizi e instraderà ogni comando verso il nodo con il segnale radio BLE ottimale.
 
 ---
 
-## 4. Licenza
+## 5. Licenza
 MIT License
+
 

@@ -7,9 +7,6 @@ esphome:
   name: ${name}
   name_add_mac_suffix: false
   friendly_name: ${friendly_name}
-  includes:
-    - finder_sender.h
-    - finder_keys.h
 
 esp32:
   board: esp32dev
@@ -22,93 +19,6 @@ logger:
 api:
   encryption:
     key: !secret api_encryption_key
-  services:
-    # --- Relays ---
-    - service: toggle_luce_tv
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_api", "Service toggle_luce_tv invoked via Home Assistant API");
-            send_finder_relay_click(LUCE_TV_MAC, LUCE_TV_KEY, 1);
-    - service: toggle_luce_living
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_api", "Service toggle_luce_living invoked via Home Assistant API");
-            send_finder_relay_click(LUCE_TV_MAC, LUCE_TV_KEY, 2);
-    - service: toggle_luce_balcone
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_api", "Service toggle_luce_balcone invoked via Home Assistant API");
-            send_finder_relay_click(LUCE_BALCONE_MAC, LUCE_BALCONE_KEY, 1);
-
-    # --- Dimmer 15.21 (Luce Tavolo Pranzo) ---
-    - service: set_pranzo_brightness
-      variables:
-        brightness_pct: int
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_api", "Service set_pranzo_brightness: %d%%", brightness_pct);
-            send_finder_dimmer_set(LUCE_PRANZO_MAC, LUCE_PRANZO_KEY, (uint8_t)brightness_pct);
-    - service: toggle_luce_pranzo
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_api", "Service toggle_luce_pranzo invoked");
-            send_finder_relay_click(LUCE_PRANZO_MAC, LUCE_PRANZO_KEY, 1);
-
-    # --- Roller Shutters 13.S2 ---
-    - service: shutter_sx_soggiorno_set_position
-      variables:
-        position_pct: int
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_api", "Service shutter_sx_soggiorno_set_position: %d%%", position_pct);
-            send_finder_shutter_set_position(TAPPARELLA_SX_SOGGIORNO_MAC, TAPPARELLA_SX_SOGGIORNO_KEY, (uint8_t)position_pct);
-    - service: shutter_sx_soggiorno_open
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_api", "Service shutter_sx_soggiorno_open invoked");
-            send_finder_shutter_open(TAPPARELLA_SX_SOGGIORNO_MAC, TAPPARELLA_SX_SOGGIORNO_KEY);
-    - service: shutter_sx_soggiorno_close
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_api", "Service shutter_sx_soggiorno_close invoked");
-            send_finder_shutter_close(TAPPARELLA_SX_SOGGIORNO_MAC, TAPPARELLA_SX_SOGGIORNO_KEY);
-    - service: shutter_sx_soggiorno_stop
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_api", "Service shutter_sx_soggiorno_stop invoked");
-            send_finder_shutter_stop(TAPPARELLA_SX_SOGGIORNO_MAC, TAPPARELLA_SX_SOGGIORNO_KEY);
-
-    # --- Dynamic Universal Mesh Services (Invoked by HA Smart Router) ---
-    - service: finder_mesh_click
-      variables:
-        mac: string
-        key: string
-        channel: int
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_dyn", "finder_mesh_click -> MAC:%s Ch:%d", mac.c_str(), (int)channel);
-            send_finder_generic_click_hex(mac, key, (int)channel);
-
-    - service: finder_mesh_set_percent
-      variables:
-        mac: string
-        key: string
-        percent: int
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_dyn", "finder_mesh_set_percent -> MAC:%s %%:%d", mac.c_str(), (int)percent);
-            send_finder_generic_percent_hex(mac, key, (int)percent);
-
-    - service: finder_mesh_shutter_stop
-      variables:
-        mac: string
-        key: string
-        channel: int
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_dyn", "finder_mesh_shutter_stop -> MAC:%s Ch:%d", mac.c_str(), (int)channel);
-            send_finder_generic_shutter_stop_hex(mac, key, (int)channel);
-
 
 ota:
   platform: esphome
@@ -126,94 +36,11 @@ wifi:
 bluetooth_proxy:
   active: true
 
-esp32_ble_tracker:
-  scan_parameters:
-    interval: 320ms
-    window: 320ms
-    active: true
-  on_ble_advertise:
-    - then:
-        - lambda: |-
-            char addr_buf[18];
-            x.address_str_to(addr_buf);
-            if (strncmp(addr_buf, "05:61:", 6) == 0) {
-              for (auto &mf : x.get_manufacturer_datas()) {
-                std::string hex_data = "";
-                char buf[8];
-                for (uint8_t b : mf.data) {
-                  sprintf(buf, "%02X ", b);
-                  hex_data += buf;
-                }
-                ESP_LOGI("finder_rx", "YESLY [%s] RSSI:%d MF:%s", addr_buf, x.get_rssi(), hex_data.c_str());
-              }
-            }
-
-
-
-button:
-  # Relè Canale 1
-  - platform: template
-    name: "Luce TV Toggle (Local BLE Direct)"
-    id: btn_luce_tv_toggle
-    icon: "mdi:television-ambient-light"
-    on_press:
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_cmd", "Triggering Local BLE direct toggle for Luce TV (Channel 1)...");
-            send_finder_relay_click(LUCE_TV_MAC, LUCE_TV_KEY, 1);
-
-  # Relè Canale 2
-  - platform: template
-    name: "Luce Living Toggle (Local BLE Direct)"
-    id: btn_luce_living_toggle
-    icon: "mdi:sofa"
-    on_press:
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_cmd", "Triggering Local BLE direct toggle for Luce Living (Channel 2)...");
-            send_finder_relay_click(LUCE_TV_MAC, LUCE_TV_KEY, 2);
-
-  # Relè Balcone
-  - platform: template
-    name: "Luce Balcone Toggle (Local BLE Direct)"
-    id: btn_luce_balcone_toggle
-    icon: "mdi:balcony"
-    on_press:
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_cmd", "Triggering Local BLE direct toggle for Luce Balcone (Channel 1)...");
-            send_finder_relay_click(LUCE_BALCONE_MAC, LUCE_BALCONE_KEY, 1);
-
-  # Dimmer 15.21 Pranzo Test Buttons
-  - platform: template
-    name: "Luce Pranzo Toggle (Local BLE Direct)"
-    id: btn_luce_pranzo_toggle
-    icon: "mdi:table-chair"
-    on_press:
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_cmd", "Triggering Local BLE direct toggle for Luce Pranzo...");
-            send_finder_relay_click(LUCE_PRANZO_MAC, LUCE_PRANZO_KEY, 1);
-
-  - platform: template
-    name: "Luce Pranzo Dim 50% (Local BLE Direct)"
-    id: btn_luce_pranzo_dim_50
-    icon: "mdi:brightness-50"
-    on_press:
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_cmd", "Triggering Local BLE direct dim 50% for Luce Pranzo...");
-            send_finder_dimmer_set(LUCE_PRANZO_MAC, LUCE_PRANZO_KEY, 50);
-
-  - platform: template
-    name: "Luce Pranzo Dim 100% (Local BLE Direct)"
-    id: btn_luce_pranzo_dim_100
-    icon: "mdi:brightness-7"
-    on_press:
-      then:
-        - lambda: |-
-            ESP_LOGI("finder_cmd", "Triggering Local BLE direct dim 100% for Luce Pranzo...");
-            send_finder_dimmer_set(LUCE_PRANZO_MAC, LUCE_PRANZO_KEY, 100);
+# ==============================================================================
+# Inclusione Modulare Package Finder YESLY Mesh (Zero Custom Code nel file nodo)
+# ==============================================================================
+packages:
+  finder_yesly: !include packages/finder_yesly_mesh.yaml
 
 switch:
   - platform: restart

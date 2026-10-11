@@ -1,0 +1,68 @@
+# ==============================================================================
+# ESPHome Package: Finder YESLY Mesh Gateway
+# Repository: https://github.com/francescodoffizi/BLE_Finder_Yesly
+#
+# Include this package in any ESP32 ESPHome node to enable Finder YESLY BLE Mesh
+# command dispatching and telemetry sniffing without custom code.
+# ==============================================================================
+
+esphome:
+  includes:
+    - finder_sender.h
+
+api:
+  services:
+    # 1. Mesh Click (Relays On/Off, Shutter full open/close click)
+    - service: finder_mesh_click
+      variables:
+        mac: string
+        key: string
+        channel: int
+      then:
+        - lambda: |-
+            ESP_LOGI("finder_pkg", "finder_mesh_click -> MAC:%s Ch:%d", mac.c_str(), (int)channel);
+            send_finder_generic_click_hex(mac, key, (int)channel);
+
+    # 2. Mesh Set Percent (Dimmers 15.21 and Shutters 13.S2 position 0-100%)
+    - service: finder_mesh_set_percent
+      variables:
+        mac: string
+        key: string
+        percent: int
+      then:
+        - lambda: |-
+            ESP_LOGI("finder_pkg", "finder_mesh_set_percent -> MAC:%s %%:%d", mac.c_str(), (int)percent);
+            send_finder_generic_percent_hex(mac, key, (int)percent);
+
+    # 3. Mesh Shutter Stop (Send release frame to stop rolling shutter)
+    - service: finder_mesh_shutter_stop
+      variables:
+        mac: string
+        key: string
+        channel: int
+      then:
+        - lambda: |-
+            ESP_LOGI("finder_pkg", "finder_mesh_shutter_stop -> MAC:%s Ch:%d", mac.c_str(), (int)channel);
+            send_finder_generic_shutter_stop_hex(mac, key, (int)channel);
+
+esp32_ble_tracker:
+  scan_parameters:
+    interval: 320ms
+    window: 320ms
+    active: true
+  on_ble_advertise:
+    - then:
+        - lambda: |-
+            char addr_buf[18];
+            x.address_str_to(addr_buf);
+            if (strncmp(addr_buf, "05:61:", 6) == 0) {
+              for (auto &mf : x.get_manufacturer_datas()) {
+                std::string hex_data = "";
+                char buf[8];
+                for (uint8_t b : mf.data) {
+                  sprintf(buf, "%02X ", b);
+                  hex_data += buf;
+                }
+                ESP_LOGI("finder_rx", "YESLY [%s] RSSI:%d MF:%s", addr_buf, x.get_rssi(), hex_data.c_str());
+              }
+            }
