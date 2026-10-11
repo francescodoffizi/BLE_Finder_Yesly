@@ -7,6 +7,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "mbedtls/ccm.h"
+#include <time.h>
+#include <sys/time.h>
 
 namespace esphome {
 namespace finder_yesly {
@@ -19,7 +21,26 @@ class FinderYeslyComponent : public Component {
 };
 
 // Rolling sequence counter stored in RTC slow memory so it survives soft reboots
-RTC_DATA_ATTR static uint32_t s_finder_rolling_counter = 0x00100000;
+RTC_DATA_ATTR static uint32_t s_finder_rolling_counter = 0;
+
+/**
+ * Calculates Finder YESLY timestamp counter based on seconds since 2019-01-01 00:00:00 UTC (1546300800).
+ * Matches Finder CounterUtils.GetTimestampCounter(utcnow):
+ * loc1 = (utcnow - 2019/1/1)
+ * loc2 = loc1 & 0x7F
+ * res = (((loc1 & 0x7FFFFF80) >> 1) ^ 0x80) ^ loc2
+ */
+inline uint32_t get_finder_timestamp_counter() {
+    time_t now = time(nullptr);
+    int64_t diff = (int64_t)now - 1546300800LL;
+    // Fallback baseline if NTP is not yet synchronized (approx Oct 2026 counter ~ 122,700,000)
+    if (diff < 240000000LL) {
+        diff = 245436000LL;
+    }
+    uint32_t loc2 = (uint32_t)(diff & 0x7F);
+    uint32_t counter = (((uint32_t)(diff & 0x7FFFFF80) >> 1) ^ 0x80) ^ loc2;
+    return counter;
+}
 
 inline void send_finder_raw(const uint8_t *payload, size_t len) {
     if (len > 24) return;
@@ -62,7 +83,8 @@ inline void send_finder_raw(const uint8_t *payload, size_t len) {
         return;
     }
     
-    vTaskDelay(pdMS_TO_TICKS(100));
+    // Extended adv duration to 250ms to ensure BLE mesh packet capture
+    vTaskDelay(pdMS_TO_TICKS(250));
     esp_ble_gap_stop_advertising();
     ESP_LOGI("finder_tx", "Broadcast completed successfully.");
 }
@@ -116,8 +138,9 @@ inline bool send_finder_mesh_packet(const uint8_t mac[6], const uint8_t key[16],
 }
 
 inline void send_finder_relay_click(const uint8_t mac[6], const uint8_t key[16], uint8_t channel) {
-    if (s_finder_rolling_counter < 0x00100000) {
-        s_finder_rolling_counter = 0x00100000;
+    uint32_t ts_cnt = get_finder_timestamp_counter();
+    if (s_finder_rolling_counter < ts_cnt) {
+        s_finder_rolling_counter = ts_cnt;
     }
 
     uint8_t cmd_press = (1 << channel) ^ 1;
@@ -135,8 +158,9 @@ inline void send_finder_relay_click(const uint8_t mac[6], const uint8_t key[16],
 }
 
 inline void send_finder_dimmer_set(const uint8_t mac[6], const uint8_t key[16], uint8_t percent) {
-    if (s_finder_rolling_counter < 0x00100000) {
-        s_finder_rolling_counter = 0x00100000;
+    uint32_t ts_cnt = get_finder_timestamp_counter();
+    if (s_finder_rolling_counter < ts_cnt) {
+        s_finder_rolling_counter = ts_cnt;
     }
     if (percent > 100) percent = 100;
     uint8_t cmd = 0x80 | (percent & 0x7F);
@@ -147,8 +171,9 @@ inline void send_finder_dimmer_set(const uint8_t mac[6], const uint8_t key[16], 
 }
 
 inline void send_finder_shutter_set_position(const uint8_t mac[6], const uint8_t key[16], uint8_t percent) {
-    if (s_finder_rolling_counter < 0x00100000) {
-        s_finder_rolling_counter = 0x00100000;
+    uint32_t ts_cnt = get_finder_timestamp_counter();
+    if (s_finder_rolling_counter < ts_cnt) {
+        s_finder_rolling_counter = ts_cnt;
     }
     if (percent > 100) percent = 100;
     uint8_t cmd = 0x80 | (percent & 0x7F);
@@ -167,8 +192,9 @@ inline void send_finder_shutter_close(const uint8_t mac[6], const uint8_t key[16
 }
 
 inline void send_finder_shutter_stop(const uint8_t mac[6], const uint8_t key[16], uint8_t channel = 1) {
-    if (s_finder_rolling_counter < 0x00100000) {
-        s_finder_rolling_counter = 0x00100000;
+    uint32_t ts_cnt = get_finder_timestamp_counter();
+    if (s_finder_rolling_counter < ts_cnt) {
+        s_finder_rolling_counter = ts_cnt;
     }
     uint8_t cmd_release = (1 << channel) ^ 0;
     uint32_t cnt = ++s_finder_rolling_counter;
