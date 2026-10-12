@@ -259,7 +259,7 @@ inline void send_finder_generic_shutter_stop_hex(const std::string &mac_hex, con
 
 inline void on_finder_adv_received(const std::string &mac_str, int rssi, const std::string &hex_data) {
 #if defined(USE_API) && defined(USE_API_HOMEASSISTANT_SERVICES)
-    if (global_api_server != nullptr && global_api_server->is_connected()) {
+    if (esphome::api::global_api_server != nullptr && esphome::api::global_api_server->is_connected()) {
         esphome::api::CustomAPIDevice api_dev;
         std::map<std::string, std::string> data;
         data["mac"] = mac_str;
