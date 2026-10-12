@@ -64,5 +64,6 @@ esp32_ble_tracker:
                   hex_data += buf;
                 }
                 ESP_LOGI("finder_rx", "YESLY [%s] RSSI:%d MF:%s", addr_buf, x.get_rssi(), hex_data.c_str());
+                esphome::finder_yesly::on_finder_adv_received(addr_buf, x.get_rssi(), hex_data);
               }
             }

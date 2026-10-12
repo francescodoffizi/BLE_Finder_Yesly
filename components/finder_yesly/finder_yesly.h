@@ -4,11 +4,15 @@
 #include "esphome/core/log.h"
 #include <esp_gap_ble_api.h>
 #include <cstring>
+#include <map>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "mbedtls/ccm.h"
 #include <time.h>
 #include <sys/time.h>
+#ifdef USE_API
+#include "esphome/components/api/custom_api_device.h"
+#endif
 
 namespace esphome {
 namespace finder_yesly {
@@ -251,6 +255,19 @@ inline void send_finder_generic_shutter_stop_hex(const std::string &mac_hex, con
         return;
     }
     send_finder_shutter_stop(mac, key, (uint8_t)channel);
+}
+
+inline void on_finder_adv_received(const std::string &mac_str, int rssi, const std::string &hex_data) {
+#if defined(USE_API) && defined(USE_API_HOMEASSISTANT_SERVICES)
+    if (global_api_server != nullptr && global_api_server->is_connected()) {
+        esphome::api::CustomAPIDevice api_dev;
+        std::map<std::string, std::string> data;
+        data["mac"] = mac_str;
+        data["rssi"] = std::to_string(rssi);
+        data["mf"] = hex_data;
+        api_dev.fire_homeassistant_event("esphome.finder_ble_adv", data);
+    }
+#endif
 }
 
 }  // namespace finder_yesly
