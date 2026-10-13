@@ -3,7 +3,7 @@
 # Repository: https://github.com/francescodoffizi/BLE_Finder_Yesly
 #
 # Include this package in any ESP32 ESPHome node to enable Finder YESLY BLE Mesh
-# command dispatching and telemetry sniffing without custom code.
+# command dispatching and telemetry reception without custom code.
 # ==============================================================================
 
 esphome:

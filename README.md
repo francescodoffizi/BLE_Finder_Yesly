@@ -7,7 +7,7 @@ Progetto per il controllo diretto e 100% offline degli attuatori **Finder YESLY*
 ## 1. Obiettivi del Progetto
 
 1. **Zero Cloud Dependency**: Eliminare le disconnessioni, la demotion silenziosa dell'app e la latenza dei server gRPC Finder.
-2. **Controllo Diretto BLE**: Utilizzare le chiavi simmetriche AES-128 e i MAC address estratti dal dump dell'impianto (`GetPlant`) per inviare comandi radio cifrati direttamente agli attuatori.
+2. **Controllo Diretto BLE**: Utilizzare le chiavi simmetriche AES-128 e i MAC address configurati nell'impianto per inviare comandi radio cifrati direttamente agli attuatori.
 3. **Integrazione ESPHome / Home Assistant**: Creare un componente personalizzato ESPHome per gestire entità cover e switch locali da Home Assistant con risposta immediata.
 
 ---
@@ -45,7 +45,7 @@ Progetto per il controllo diretto e 100% offline degli attuatori **Finder YESLY*
 - `packages/finder_yesly_mesh.yaml`: Package standard ESPHome pronto all'uso da includere in qualsiasi proxy ESP32.
 - `finder_sender.h`: Motore crittografico AES-128-CCM e gestore advertising radio BLE raw.
 - `bluetooth-proxy-sara.yaml`: Esempio di firmware nodo proxy reale ripulito e modulare.
-- `tools/`: Script Python per reverse engineering, cattura telemetria e PoC.
+- `tools/`: Script e utility Python per analisi del protocollo radio, diagnostica telemetria e PoC.
 
 ---
 

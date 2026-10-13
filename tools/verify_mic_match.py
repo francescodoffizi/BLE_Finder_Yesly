@@ -3,7 +3,7 @@ sys.path.append('tools')
 from proto import parse_fields
 from Cryptodome.Cipher import AES
 
-# Target sniffed packet:
+# Target captured packet:
 # F1 61 0E 00 03 A9 8C CF E3
 cnt_bytes = bytes.fromhex("F1 61 0E 00")
 cmd_byte = bytes.fromhex("03")

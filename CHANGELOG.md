@@ -5,6 +5,11 @@ Tutte le modifiche degne di nota al componente ESPHome per il controllo dei disp
 ## [Unreleased]
 
 ### Aggiunto / Ottimizzato
+- **Licenza Ufficiale MIT**:
+  - Introdotto file `LICENSE` con titolarità `Copyright (c) 2026 Francesco D'Offizi`.
+- **Bonifica Documentazione e Interoperabilità**:
+  - Revisionato `README.md` focalizzando la descrizione del progetto su interoperabilità di rete BLE, standard crittografici e controllo offline diretto.
+  - Normalizzati gli script di test interni e validazione protocollo AES-CCM.
 - **Sincronizzazione Dinamica del Sequence Counter con Epoch UTC 2019-01-01**:
   - Allineata la formula del contatore rolling alla logica proprietaria Finder (`CounterUtils.GetTimestampCounter(utcnow)`).
   - Previene che i frame BLE vengano rigettati come comandi replay/stale dai relè fisici YESLY.
