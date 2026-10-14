@@ -4,7 +4,12 @@ Tutte le modifiche degne di nota al componente ESPHome per il controllo dei disp
 
 ## [Unreleased]
 
-### Aggiunto / Ottimizzato
+- **Mitigazione Tempesta RF BLE & Passaggio a Scansione Passiva (`active: false`)**:
+  - Convertita la modalità di scansione di `esp32_ble_tracker` da attiva a passiva (`active: false`), eliminando l'invio continuo di pacchetti `SCAN_REQ` da parte dei proxy ESP32 che saturavano l'etere a 2.4 GHz e collassavano la mesh YESLY.
+- **Deduplicazione Hardware e Rate Limiting Telemetria (`s_adv_cache`)**:
+  - Introdotta cache LRU in RAM (`AdvCacheEntry`) su ESP32 per sopprimere payload duplicati entro 2500 ms e imporre un rate-limit massimo di 1 pacchetto/sec per MAC, abbattendo il carico di eventi verso Home Assistant da >6000/min a soli frame effettivi di stato.
+- **Interruttore di Emergenza Telemetria (`switch.finder_telemetry_forwarding`)**:
+  - Esporto switch template in Home Assistant per silenziare/riattivare istantaneamente l'inoltro di eventi `esphome.finder_ble_adv` senza ricompilare o riavviare i nodi.
 - **Licenza Ufficiale MIT**:
   - Introdotto file `LICENSE` con titolarità `Copyright (c) 2026 Francesco D'Offizi`.
 - **Bonifica Documentazione e Interoperabilità**:

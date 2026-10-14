@@ -2,6 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/core/log.h"
+#include "esphome/core/hal.h"
 #include <esp_gap_ble_api.h>
 #include <cstring>
 #include <map>
@@ -257,16 +258,51 @@ inline void send_finder_generic_shutter_stop_hex(const std::string &mac_hex, con
     send_finder_shutter_stop(mac, key, (uint8_t)channel);
 }
 
+struct AdvCacheEntry {
+    std::string mf;
+    uint32_t last_time;
+};
+
+static std::map<std::string, AdvCacheEntry> s_adv_cache;
+static bool s_telemetry_enabled = true;
+
+inline void set_finder_telemetry_enabled(bool enabled) {
+    s_telemetry_enabled = enabled;
+}
+
+inline bool is_finder_telemetry_enabled() {
+    return s_telemetry_enabled;
+}
+
 inline void on_finder_adv_received(const std::string &mac_str, int rssi, const std::string &hex_data) {
 #if defined(USE_API) && defined(USE_API_HOMEASSISTANT_SERVICES)
-    if (esphome::api::global_api_server != nullptr && esphome::api::global_api_server->is_connected()) {
-        esphome::api::CustomAPIDevice api_dev;
-        std::map<std::string, std::string> data;
-        data["mac"] = mac_str;
-        data["rssi"] = std::to_string(rssi);
-        data["mf"] = hex_data;
-        api_dev.fire_homeassistant_event("esphome.finder_ble_adv", data);
+    if (!s_telemetry_enabled) return;
+
+    if (esphome::api::global_api_server == nullptr || !esphome::api::global_api_server->is_connected()) {
+        return;
     }
+
+    uint32_t now = millis();
+    auto it = s_adv_cache.find(mac_str);
+    if (it != s_adv_cache.end()) {
+        // 1. Duplicate payload suppression: if identical packet within 2500ms, ignore
+        if (it->second.mf == hex_data && (now - it->second.last_time < 2500)) {
+            return;
+        }
+        // 2. Rate limiting: never fire more than 1 event per 1000ms per MAC
+        if (now - it->second.last_time < 1000) {
+            return;
+        }
+    }
+
+    s_adv_cache[mac_str] = {hex_data, now};
+
+    esphome::api::CustomAPIDevice api_dev;
+    std::map<std::string, std::string> data;
+    data["mac"] = mac_str;
+    data["rssi"] = std::to_string(rssi);
+    data["mf"] = hex_data;
+    api_dev.fire_homeassistant_event("esphome.finder_ble_adv", data);
 #endif
 }
 

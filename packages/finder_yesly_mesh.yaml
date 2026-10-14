@@ -49,7 +49,7 @@ esp32_ble_tracker:
   scan_parameters:
     interval: 320ms
     window: 320ms
-    active: true
+    active: false
   on_ble_advertise:
     - then:
         - lambda: |-
@@ -63,7 +63,19 @@ esp32_ble_tracker:
                   sprintf(buf, "%02X ", b);
                   hex_data += buf;
                 }
-                ESP_LOGI("finder_rx", "YESLY [%s] RSSI:%d MF:%s", addr_buf, x.get_rssi(), hex_data.c_str());
                 esphome::finder_yesly::on_finder_adv_received(addr_buf, x.get_rssi(), hex_data);
               }
             }
+
+switch:
+  - platform: template
+    name: "Finder Telemetry Forwarding"
+    id: switch_finder_telemetry
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    turn_on_action:
+      - lambda: |-
+          esphome::finder_yesly::set_finder_telemetry_enabled(true);
+    turn_off_action:
+      - lambda: |-
+          esphome::finder_yesly::set_finder_telemetry_enabled(false);
